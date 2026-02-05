@@ -1,0 +1,58 @@
+slam_car:
+  custom_slam_controller:
+    type: slam_car/CustomSlamController
+    publish_rate: 50.0
+    robot_base_frame_id: base_footprint
+    odom_frame_id: odom
+    cmd_vel_timeout: 0.5
+    enable_odom_tf: true
+    wheel_joint_names: ["lf_j", "lb_j", "rf_j", "rb_j"]
+    pose_covariance_diagonal : [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+    twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+  # 左侧轮子 (front left 和 back left)
+  left_wheel_controller:
+    type: diff_drive_controller/DiffDriveController
+    publish_rate: 50.0
+    pose_covariance_diagonal : [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+    twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+    cmd_vel_timeout: 0.5
+    velocity_rolling_window_size: 2
+    linear:
+      x:
+        has_velocity_limits: true
+        max_velocity: 1.0
+        min_velocity: -1.0
+        has_acceleration_limits: true
+        max_acceleration: 2.0
+        min_acceleration: -2.0
+        has_jerk_limits: false
+        max_jerk: 0.0
+        min_jerk: 0.0
+    angular:
+      z:
+        has_velocity_limits: true
+        max_velocity: 1.0
+        min_velocity: -1.0
+        has_acceleration_limits: true
+        max_acceleration: 2.0
+        min_acceleration: -2.0
+        has_jerk_limits: false
+        max_jerk: 0.0
+        min_jerk: 0.0
+    use_stamped_vel: false
+    allow_multiple_cmd_vel_publishers: false
+    velocity_rolling_window_size: 10
+    open_loop: false
+    enable_odometry_tf: true
+    odom_frame_id: odom
+    base_frame_id: base_footprint
+    twist_covariance_diagonal: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
+    pose_publish_rate: 50.0
+    tf_publish_rate: 50.0
+    right_wheel_names: ["rf_j", "rb_j"]
+    left_wheel_names: ["lf_j", "lb_j"]
+    wheel_separation: 0.15
+    wheel_radius: 0.03
+    wheel_separation_multiplier: 1.0
+    left_wheel_radius_multiplier: 1.0
+    right_wheel_radius_multiplier: 1.0

@@ -1,0 +1,319 @@
+<?xml version="1.0" ?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="slam_car">
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+      <origin xyz="0 0 0.001" rpy="0 0 0" />
+      <parent link="base_footprint"/>
+      <child link="base_link" />
+  </joint>
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-0.00527433135844615 -0.045 0.00686759636192835"
+        rpy="0 0 0" />
+      <mass
+        value="0.13617029881095" />
+      <inertia
+        ixx="9.30040649361772E-05"
+        ixy="-6.06049330100587E-21"
+        ixz="-1.51918864165113E-06"
+        iyy="0.000262148841288"
+        iyz="6.30331294151636E-21"
+        izz="0.000352490055892557" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="lf_w">
+    <inertial>
+      <origin
+        xyz="-6.73072708679001E-16 -2.16840434497101E-17 -0.0242105263157896"
+        rpy="0 0 0" />
+      <mass
+        value="0.00746128255227575" />
+      <inertia
+        ixx="5.5392315369987E-07"
+        ixy="-2.76044742654947E-39"
+        ixz="1.58714800464317E-21"
+        iyy="5.5392315369987E-07"
+        iyz="0"
+        izz="7.96442825070225E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/lf_w.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/lf_w.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="lf_j"
+    type="continuous">
+    <origin
+      xyz="-0.0566191120777502 -0.0750000000000003 0.00669432926045225"
+      rpy="1.5707963267949 0 3.14159265358979" />
+    <parent
+      link="base_link" />
+    <child
+      link="lf_w" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="lb_w">
+    <inertial>
+      <origin
+        xyz="-6.38378239159465E-16 1.47451495458029E-17 -0.0242105263157896"
+        rpy="0 0 0" />
+      <mass
+        value="0.00746128255227575" />
+      <inertia
+        ixx="5.53923153699869E-07"
+        ixy="4.09513857735467E-39"
+        ixz="1.46564131977541E-21"
+        iyy="5.53923153699869E-07"
+        iyz="1.14794370197489E-38"
+        izz="7.96442825070224E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/lb_w.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/lb_w.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="lb_j"
+    type="continuous">
+    <origin
+      xyz="0.0433808879222498 -0.0749999999999997 0.00669432926045225"
+      rpy="1.5707963267949 0 3.14159265358979" />
+    <parent
+      link="base_link" />
+    <child
+      link="lb_w" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="rf_w">
+    <inertial>
+      <origin
+        xyz="0 -8.67361737988404E-19 -0.00921052631578944"
+        rpy="0 0 0" />
+      <mass
+        value="0.00746128255227576" />
+      <inertia
+        ixx="5.5392315369987E-07"
+        ixy="-3.13013882834049E-39"
+        ixz="-1.50647647604789E-22"
+        iyy="5.5392315369987E-07"
+        iyz="-4.23592720358353E-40"
+        izz="7.96442825070225E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/rf_w.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/rf_w.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="rf_j"
+    type="continuous">
+    <origin
+      xyz="-0.0566191120777502 0 0.00669432926045225"
+      rpy="1.5707963267949 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="rf_w" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="rb_w">
+    <inertial>
+      <origin
+        xyz="0 -8.6736E-19 -0.0092105"
+        rpy="0 0 0" />
+      <mass
+        value="0.0074613" />
+      <inertia
+        ixx="5.5392E-07"
+        ixy="-3.1301E-39"
+        ixz="-1.5065E-22"
+        iyy="5.5392E-07"
+        iyz="-4.2359E-40"
+        izz="7.9644E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/rb_w.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/rb_w.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="rb_j"
+    type="continuous">
+    <origin
+      xyz="0.043381 0 0.0066943"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="rb_w" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="LiDAR">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0" />
+      <inertia
+        ixx="0"
+        ixy="0"
+        ixz="0"
+        iyy="0"
+        iyz="0"
+        izz="0" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/LiDAR.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://slam_car/meshes/LiDAR.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="LiDAR_j"
+    type="fixed">
+    <origin
+      xyz="-0.025619 -0.045 0.037611"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="LiDAR" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+</robot>

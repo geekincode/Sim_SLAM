@@ -1,0 +1,173 @@
+<?xml version="1.0" ?>
+<!-- This XACRO was automatically created by converting a URDF file! 
+     Originally created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="slam_car">
+
+  <!-- Include the Livox MID360 sensor definition -->
+  <xacro:include filename="$(find ros2_livox_simulation)/urdf/mid360.xacro" />
+
+  <!-- Define properties -->
+  <xacro:property name="M_PI" value="3.1415926535897931" />
+
+  <!-- Define base footprint -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+      <origin xyz="0 0 0.001" rpy="0 0 0" />
+      <parent link="base_footprint"/>
+      <child link="base_link" />
+  </joint>
+
+  <!-- Base link -->
+  <link name="base_link">
+    <inertial>
+      <origin xyz="-0.0052743 0.0068676 0.045" rpy="0 0 0" />
+      <mass value="0.13617" />
+      <inertia ixx="9.3004E-05" ixy="-1.5192E-06" ixz="5.3475E-21" iyy="0.00035249" iyz="-7.717E-22" izz="0.00026215" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://slam_car/meshes/base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://slam_car/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Macro for wheel definition -->
+  <xacro:macro name="wheel" params="prefix x y z roll pitch yaw">
+    <link name="${prefix}_w">
+      <inertial>
+        <origin xyz="${x} ${y} ${z}" rpy="${roll} ${pitch} ${yaw}" />
+        <mass value="0.0074613" />
+        <inertia ixx="5.5392E-07" ixy="-2.7375E-39" ixz="1.5863E-21" 
+                 iyy="5.5392E-07" iyz="0" izz="7.9644E-07" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://slam_car/meshes/${prefix}_w.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="1 1 1 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://slam_car/meshes/${prefix}_w.STL" />
+        </geometry>
+      </collision>
+    </link>
+    
+    <joint name="${prefix}_j" type="continuous">
+      <origin xyz="${x} ${y} ${z}" rpy="${roll} ${pitch} ${yaw}" />
+      <parent link="base_link" />
+      <child link="${prefix}_w" />
+      <axis xyz="0 0 1" />
+    </joint>
+  </xacro:macro>
+
+  <!-- Macro for LiDAR definition -->
+  <xacro:macro name="lidar" params="name parent xyz:='0 0 0' rpy:='0 0 0' topic:='mid360'">
+    <link name="${name}">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <mass value="0" />
+        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://slam_car/meshes/LiDAR.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="1 1 1 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://slam_car/meshes/LiDAR.STL" />
+        </geometry>
+      </collision>
+    </link>
+    
+    <joint name="${name}_joint" type="fixed">
+      <origin xyz="${xyz}" rpy="${rpy}" />
+      <parent link="${parent}" />
+      <child link="${name}" />
+      <axis xyz="0 0 0" />
+    </joint>
+  </xacro:macro>
+
+  <!-- Transmission definitions for four wheels -->
+  <transmission name="lf_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="lf_j">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="lf_actuator">
+      <mechanicalReduction>1.0</mechanicalReduction>
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </actuator>
+  </transmission>
+
+  <transmission name="lb_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="lb_j">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="lb_actuator">
+      <mechanicalReduction>1.0</mechanicalReduction>
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </actuator>
+  </transmission>
+
+  <transmission name="rf_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rf_j">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rf_actuator">
+      <mechanicalReduction>1.0</mechanicalReduction>
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </actuator>
+  </transmission>
+
+  <transmission name="rb_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb_j">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb_actuator">
+      <mechanicalReduction>1.0</mechanicalReduction>
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </actuator>
+  </transmission>
+
+  <!-- Define wheels using macro -->
+  <xacro:wheel prefix="lf" x="-0.056619" y="-0.075" z="0.0066943" roll="1.5708" pitch="0" yaw="${M_PI}" />
+  <xacro:wheel prefix="lb" x="0.043381" y="-0.075" z="0.0066943" roll="1.5708" pitch="0" yaw="${M_PI}" />
+  <xacro:wheel prefix="rf" x="-0.056619" y="0" z="0.0066943" roll="1.5708" pitch="0" yaw="0" />
+  <xacro:wheel prefix="rb" x="0.043381" y="0" z="0.0066943" roll="1.5708" pitch="0" yaw="0" />
+
+  <!-- Add LiDAR using macro -->
+  <!-- <xacro:lidar name="LiDAR" parent="base_link" xyz="-0.025619 -0.045 0.037611" rpy="1.5708 0 0" /> -->
+
+  <!-- Attach the Livox MID360 plugin to the LiDAR link -->
+  <xacro:mid360 name="livox_mid360" parent="base_link" topic="livox_mid360">
+    <origin xyz="-0.025619 -0.045 0.037611" rpy="0 0 0"/>
+  </xacro:mid360>
+
+</robot>
