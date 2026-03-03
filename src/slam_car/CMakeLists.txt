@@ -42,12 +42,30 @@ ament_target_dependencies(custom_slam_controller
 # Register component plugin
 rclcpp_components_register_nodes(custom_slam_controller "slam_car::CustomSlamController")
 
-# Install the library
+# Add the TF publisher executable
+add_executable(tf_publisher src/tf_publisher.cpp)
+target_include_directories(tf_publisher PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(tf_publisher PUBLIC c_std_99 cxx_std_17)
+ament_target_dependencies(tf_publisher
+  rclcpp
+  geometry_msgs
+  tf2
+  tf2_ros
+)
+
+# Install the libraries and executables
 install(TARGETS 
   custom_slam_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
+)
+
+install(TARGETS
+  tf_publisher
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY
@@ -65,8 +83,7 @@ if(BUILD_TESTING)
   # comment the line when a copyright and license is added to all source files
   set(ament_cmake_copyright_FOUND TRUE)
   # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when a
-  # a copyright and license is added to all source files
+  # comment the line when this package is in a git repo and when a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()

@@ -28,6 +28,22 @@ def generate_launch_description():
         parameters=[{'robot_description': robot_description}]
     )
 
+    # Add the TF publisher node to connect base_footprint and livox_mid360
+    tf_publisher_node = launch_ros.actions.Node(
+        package='slam_car',
+        executable='tf_publisher',
+        name='tf_publisher',
+        parameters=[
+            {'x': 0.0},
+            {'y': 0.0},
+            {'z': 0.5},  # Assuming LiDAR is 0.5m above the base
+            {'roll': 0.0},
+            {'pitch': 0.0},
+            {'yaw': 0.0}
+        ],
+        output='screen'
+    )
+
     package_world = os.path.join(urdf_tutorial_path, 'world', 'living_room', 'living_room.sdf')
 
     default_world_path = package_world
@@ -66,6 +82,7 @@ def generate_launch_description():
 
     return launch.LaunchDescription([
         robot_state_publisher_node,
+        # tf_publisher_node,  # Add the TF publisher to the launch description
         declare_world_arg,
         launch_gazebo,
         spawn_entity_node

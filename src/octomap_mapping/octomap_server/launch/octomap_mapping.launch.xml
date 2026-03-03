@@ -12,9 +12,18 @@
 
 		<!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
 		<param name="frame_id" value="livox_mid360" />
+		<param name="base_frame_id" value="base_link" />
+
 
 		<!-- maximum range to integrate (speedup!) -->
 		<param name="sensor_model.max_range" value="5.0" />
+
+		<param name="occupancy_min_z" value="0.1" />
+		<param name="occupancy_max_z" value="1.0" />
+
+		<param name="filter_ground_plane" value="true" />
+
+		<param name="use_height_map" value="true" />
 
 		<!-- data source to integrate (PointCloud2) -->
 		<remap from="cloud_in" to="livox_mid360_PointCloud2" />
