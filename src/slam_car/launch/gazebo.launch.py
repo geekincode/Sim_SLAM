@@ -2,6 +2,8 @@ import launch
 import launch_ros
 from ament_index_python.packages import get_package_share_directory
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable, TimerAction
+from launch.substitutions import LaunchConfiguration
 import os
 import xacro
 
@@ -32,41 +34,80 @@ def generate_launch_description():
 
     default_world_path = package_world
 
-    declare_world_arg = launch.actions.DeclareLaunchArgument(
+    def _find_slam_car_resource_root():
+        candidates = [
+            os.path.dirname(urdf_tutorial_path),
+            os.path.join(os.getcwd(), 'src'),
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+        ]
+        for root in candidates:
+            if os.path.isdir(os.path.join(root, 'slam_car', 'meshes')):
+                return root
+        return os.path.dirname(urdf_tutorial_path)
+
+    slam_car_resource_root = _find_slam_car_resource_root()
+    gz_resource_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
+    ign_resource_path = os.environ.get('IGN_GAZEBO_RESOURCE_PATH', '')
+
+    declare_world_arg = DeclareLaunchArgument(
         'world', default_value=default_world_path,
         description='Full path to world model file to load')
 
-    # Include another launch file for Gazebo and pass the world file
-    launch_gazebo = launch.actions.IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([get_package_share_directory(
-            'gazebo_ros'), '/launch', '/gazebo.launch.py']),
-        launch_arguments={'world': launch.substitutions.LaunchConfiguration('world')}.items()
+    declare_spawn_delay_arg = DeclareLaunchArgument(
+        'spawn_delay', default_value='10.0',
+        description='Seconds to wait before spawning the robot')
+
+    # Gazebo Sim (ros_gz)
+    launch_gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
+        ),
+        launch_arguments={
+            'gz_args': ['-r ', LaunchConfiguration('world')]
+        }.items(),
     )
 
-    # Include another launch file for Gazebo
-    launch_gazebo = launch.actions.IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([get_package_share_directory(
-            'gazebo_ros'), '/launch', '/gazebo.launch.py']),
-    )
-
-    # Request Gazebo to spawn the robot
+    # Spawn the robot
     spawn_entity_node = launch_ros.actions.Node(
-        package='gazebo_ros',
-        executable='spawn_entity.py',
+        package='ros_gz_sim',
+        executable='create',
         arguments=[
             '-topic', '/robot_description',
-            '-entity', robot_name_in_model,
+            '-name', robot_name_in_model,
             '-x', '0.0',  # X position
             '-y', '1.0',  # Y position
             '-z', '0.0',  # Z position (height)
             '-R', '0.0',  # Roll
             '-P', '0.0',  # Pitch
             '-Y', '0.0'   # Yaw
-        ])
+        ],
+        output='screen')
+
+    ros_gz_bridge_node = launch_ros.actions.Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/livox_mid360@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+            '/livox_mid360/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
+        ],
+        output='screen')
 
     return launch.LaunchDescription([
+        SetEnvironmentVariable(
+            'GZ_SIM_RESOURCE_PATH',
+            os.pathsep.join([slam_car_resource_root, gz_resource_path]) if gz_resource_path else slam_car_resource_root
+        ),
+        SetEnvironmentVariable(
+            'IGN_GAZEBO_RESOURCE_PATH',
+            os.pathsep.join([slam_car_resource_root, ign_resource_path]) if ign_resource_path else slam_car_resource_root
+        ),
         robot_state_publisher_node,
         declare_world_arg,
+        declare_spawn_delay_arg,
         launch_gazebo,
-        spawn_entity_node
+        ros_gz_bridge_node,
+        TimerAction(
+            period=LaunchConfiguration('spawn_delay'),
+            actions=[spawn_entity_node]
+        )
     ])
