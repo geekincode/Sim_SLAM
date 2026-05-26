@@ -17,7 +17,7 @@
 		<param name="sensor_model.max_range" value="5.0" />
 
 		<!-- data source to integrate (PointCloud2) -->
-		<remap from="cloud_in" to="livox_mid360_PointCloud2" />
+		<remap from="cloud_in" to="/livox_mid360/points" />
 
 		<!-- <param name="octomap_path" value="/home/rm/sim2real/test4_ws/map.bt" /> -->
 	</node>
