@@ -75,3 +75,13 @@ ros2 run slam_car keyboard_control --ros-args -p linear_speed:=0.8 -p angular_sp
 
 该项目采用ROS 2的发布/订阅模式，键盘控制节点向`/cmd_vel`话题发布[geometry_msgs::Twist](file:///home/rm/sim2real/test4_ws/src/ros2_msg_conversions/geometry_msgs/include/geometry_msgs/msg/twist.hpp#L48-L65)消息，
 由差动驱动控制器接收并转换为轮子的实际运动。
+
+
+```
+ros2 topic pub /model/slam_car/cmd_vel_4wd geometry_msgs/msg/Twist '{linear: {x: 0.5}, angular: {z: 0.2}}'
+```
+
+
+```
+ros2 topic pub /model/slam_car/cmd_wheel_vel geometry_msgs/msg/Twist '{linear: {x: 15.0, y: -15.0}, angular: {x: 15.0, y: -15.0}}'
+```

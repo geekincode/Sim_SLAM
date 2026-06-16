@@ -1,0 +1,30 @@
+# Four Wheel Drive Controller Configuration
+# This YAML file configures the FourWheelDrive Gazebo Sim plugin
+
+four_wheel_drive:
+  # Joint names for each wheel
+  front_left_joint: "lf_j"
+  front_right_joint: "rf_j"
+  back_left_joint: "lb_j"
+  back_right_joint: "rb_j"
+  
+  # Wheel geometry parameters (in meters)
+  wheel_radius: 0.03
+  wheel_separation_width: 0.15   # Distance between left and right wheels
+  wheel_separation_length: 0.15  # Distance between front and back wheels
+  
+  # Velocity limits (rad/s)
+  max_velocity: 10.0
+  min_velocity: -10.0
+  
+  # Topic names
+  cmd_vel_topic: "/model/slam_car/cmd_vel_4wd"
+  wheel_vel_topic: "/model/slam_car/cmd_wheel_vel"
+  odom_topic: "/model/slam_car/odometry_4wd"
+  
+  # Odometry settings
+  odom_publish_frequency: 50.0
+  
+  # Frame IDs
+  frame_id: "odom"
+  child_frame_id: "base_footprint"

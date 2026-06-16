@@ -60,8 +60,16 @@ def generate_launch_description():
     # Configuration Constants
     # ============================================================================
     ROBOT_NAME = "slam_car"
-    WORLD_SUBDIR = os.path.join('world', 'living_room')
-    WORLD_FILENAME = 'living_room.sdf'
+
+    WORLD_CONFIG = 2  # 1 = living_room, 2 = simple_colored_warehouse
+
+    if WORLD_CONFIG == 1:
+        WORLD_SUBDIR = os.path.join('world', 'living_room')
+        WORLD_FILENAME = 'living_room.sdf'
+    elif WORLD_CONFIG == 2:
+        WORLD_SUBDIR = os.path.join('world', 'simple_colored_warehouse')
+        WORLD_FILENAME = 'warehouse_world.sdf'
+
     URDF_SUBDIR = 'urdf'
     URDF_FILENAME = 'slam_car.xacro'
     
@@ -69,7 +77,7 @@ def generate_launch_description():
     LIVOX_POINTS_TOPIC = '/livox_mid360/points'
     
     # Default spawn position and orientation (x, y, z, roll, pitch, yaw)
-    DEFAULT_SPAWN_POSITION = ['0.0', '1.0', '0.0']
+    DEFAULT_SPAWN_POSITION = ['0.0', '0.0', '0.0']
     DEFAULT_SPAWN_ORIENTATION = ['0.0', '0.0', '0.0']
     
     # ============================================================================
@@ -98,6 +106,21 @@ def generate_launch_description():
     slam_car_resource_root = _find_slam_car_resource_root(slam_car_dir)
     gz_resource_path = _create_resource_path_env(slam_car_resource_root, 'GZ_SIM_RESOURCE_PATH')
     ign_resource_path = _create_resource_path_env(slam_car_resource_root, 'IGN_GAZEBO_RESOURCE_PATH')
+    
+    # Plugin library path setup for custom Gazebo Sim plugins
+    plugin_lib_path = os.path.join(slam_car_dir, 'lib')
+    gz_sim_system_path = os.environ.get('GZ_SIM_SYSTEM_PLUGIN_PATH', '')
+    if gz_sim_system_path:
+        gz_sim_system_plugin_path = os.pathsep.join([plugin_lib_path, gz_sim_system_path])
+    else:
+        gz_sim_system_plugin_path = plugin_lib_path
+    
+    # Also set the deprecated IGN_GAZEBO_SYSTEM_PLUGIN_PATH for compatibility
+    ign_system_path = os.environ.get('IGN_GAZEBO_SYSTEM_PLUGIN_PATH', '')
+    if ign_system_path:
+        ign_gazebo_system_plugin_path = os.pathsep.join([plugin_lib_path, ign_system_path])
+    else:
+        ign_gazebo_system_plugin_path = plugin_lib_path
     
     # ============================================================================
     # Launch Arguments
@@ -184,13 +207,19 @@ def generate_launch_description():
     # ============================================================================
     # ROS 2 <-> Gazebo Bridge Node
     # ============================================================================
-    # Bridges laser scan and point cloud topics between ROS 2 and Gazebo Sim
+    # Bridges topics between ROS 2 and Gazebo Sim
     ros_gz_bridge_node = launch_ros.actions.Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         arguments=[
+            # LiDAR data
             f'{LIVOX_LASER_TOPIC}@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
             f'{LIVOX_POINTS_TOPIC}@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
+            # Velocity commands (ROS 2 -> Gazebo)
+            '/model/slam_car/cmd_vel_4wd@geometry_msgs/msg/Twist@gz.msgs.Twist',
+            '/model/slam_car/cmd_wheel_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
+            # Odometry (Gazebo -> ROS 2)
+            '/model/slam_car/odometry_4wd@nav_msgs/msg/Odometry@gz.msgs.Odometry',
         ],
         output='screen',
     )
@@ -206,6 +235,8 @@ def generate_launch_description():
         # Environment setup
         SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', gz_resource_path),
         SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', ign_resource_path),
+        SetEnvironmentVariable('GZ_SIM_SYSTEM_PLUGIN_PATH', gz_sim_system_plugin_path),
+        SetEnvironmentVariable('IGN_GAZEBO_SYSTEM_PLUGIN_PATH', ign_gazebo_system_plugin_path),
         
         # Launch arguments
         declare_world_arg,

@@ -7,52 +7,33 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <cstring>
-#include <cctype>  // 用于tolower函数
-#include <memory>  // 用于std::make_shared
+#include <cctype>
+#include <memory>
+#include <vector>
+#include <algorithm>
 
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 
-#define KEYCODE_W 0x77
-#define KEYCODE_A 0x61
-#define KEYCODE_S 0x73
-#define KEYCODE_D 0x64
-#define KEYCODE_Q 0x71
-#define KEYCODE_E 0x65
-#define KEYCODE_I 0x69
-#define KEYCODE_K 0x6b
-#define KEYCODE_J 0x6a
-#define KEYCODE_L 0x6c
-#define KEYCODE_COMMA 0x2c
-#define KEYCODE_U 0x75
-#define KEYCODE_O 0x6F
-#define KEYCODE_N 0x6E
-#define KEYCODE_M 0x6D
-
 class KeyboardControl : public rclcpp::Node
 {
 public:
-    KeyboardControl() : Node("keyboard_control")
+    KeyboardControl()
+    : Node("keyboard_control"),
+      wheel_speed_(15.0)
     {
-        cmd_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+        // 创建 Twist 命令发布者，发布到独立四轮速度控制话题
+        // linear.x = FL, linear.y = FR, angular.x = BL, angular.y = BR
+        cmd_wheel_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
+            "/model/slam_car/cmd_wheel_vel", 10);
         
-        // 获取参数或设置默认值
-        this->declare_parameter<double>("linear_speed", 0.5);
-        this->declare_parameter<double>("angular_speed", 0.5);
+        // 声明参数
+        this->declare_parameter<double>("wheel_speed", 15.0);
         
-        this->get_parameter("linear_speed", linear_speed_);
-        this->get_parameter("angular_speed", angular_speed_);
+        // 获取参数
+        this->get_parameter("wheel_speed", wheel_speed_);
         
-        std::cout << "请按以下键控制机器人运动：" << std::endl;
-        std::cout << "---------------------------" << std::endl;
-        std::cout << "   I    : 前进" << std::endl;
-        std::cout << "   ,    : 后退" << std::endl;
-        std::cout << "   J/K  : 左转/右转" << std::endl;
-        std::cout << "   U/O  : 左前/右前" << std::endl;
-        std::cout << "   N/M  : 左后/右后" << std::endl;
-        std::cout << "   Q    : 退出程序" << std::endl;
-        std::cout << "---------------------------" << std::endl;
-        std::cout << "提示：按住键可以让机器人持续运动" << std::endl;
+        printInstructions();
     }
 
     int kfd = 0;
@@ -99,14 +80,50 @@ public:
         tcsetattr(kfd, TCSANOW, &cooked);
     }
 
-    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_pub_;
-    double linear_speed_, angular_speed_;
+    void publishWheelVel(double fl, double fr, double bl, double br)
+    {
+        auto twist_msg = geometry_msgs::msg::Twist();
+        // linear.x = FL, linear.y = FR
+        // angular.x = BL, angular.y = BR
+        twist_msg.linear.x = fl;
+        twist_msg.linear.y = fr;
+        twist_msg.linear.z = 0.0;
+        twist_msg.angular.x = bl;
+        twist_msg.angular.y = br;
+        twist_msg.angular.z = 0.0;
+        cmd_wheel_vel_pub_->publish(twist_msg);
+    }
+
+    void printInstructions()
+    {
+        std::cout << "\n========== Slam Car 键盘控制 ==========" << std::endl;
+        std::cout << "运动控制:" << std::endl;
+        std::cout << "  I         : 前进" << std::endl;
+        std::cout << "  , (逗号)  : 后退" << std::endl;
+        std::cout << "  J         : 左转" << std::endl;
+        std::cout << "  L         : 右转" << std::endl;
+        std::cout << "  U         : 左前移动" << std::endl;
+        std::cout << "  O         : 右前移动" << std::endl;
+        std::cout << "  N         : 左后移动" << std::endl;
+        std::cout << "  M         : 右后移动" << std::endl;
+        std::cout << "\n速度调节:" << std::endl;
+        std::cout << "  W/S       : 增加/降低轮子速度" << std::endl;
+        std::cout << "\n其他:" << std::endl;
+        std::cout << "  空格/0    : 停止" << std::endl;
+        std::cout << "  Q         : 退出程序" << std::endl;
+        std::cout << "========================================" << std::endl;
+        std::cout << "当前轮子速度: " << wheel_speed_ << " rad/s" << std::endl;
+        std::cout << "提示：按住键可以持续控制，松开后自动停止" << std::endl;
+    }
+
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_wheel_vel_pub_;
+    double wheel_speed_;
 };
 
 void quit(int sig)
 {
     (void)sig;
-    std::cout << "关闭键盘控制节点..." << std::endl;
+    std::cout << "\n关闭键盘控制节点..." << std::endl;
     exit(0);
 }
 
@@ -128,77 +145,125 @@ int main(int argc, char** argv)
     
     char c;
     bool dirty = false;
-    geometry_msgs::msg::Twist twist;
     
-    std::cout << "请按以下键控制机器人运动：" << std::endl;
-    std::cout << "---------------------------" << std::endl;
-    std::cout << "   I    : 前进" << std::endl;
-    std::cout << "   ,    : 后退" << std::endl;
-    std::cout << "   J/K  : 左转/右转" << std::endl;
-    std::cout << "   U/O  : 左前/右前" << std::endl;
-    std::cout << "   N/M  : 左后/右后" << std::endl;
-    std::cout << "   Q    : 退出程序" << std::endl;
-    std::cout << "---------------------------" << std::endl;
+    // 当前四个轮子的速度
+    double fl_vel = 0.0;  // 左前轮
+    double fr_vel = 0.0;  // 右前轮
+    double bl_vel = 0.0;  // 左后轮
+    double br_vel = 0.0;  // 右后轮
+    
+    std::cout << "\n键盘控制已启动！" << std::endl;
     
     // 主循环
     while (true) {
         c = keyboard_control->getKey();
-
-        twist.linear.x = twist.linear.y = twist.linear.z = 0;
-        twist.angular.x = twist.angular.y = twist.angular.z = 0;
         
-        // 将字符转换为小写以统一处理大写和小写字母
+        // 将字符转换为小写
         char lower_c = std::tolower(c);
         
+        // 默认不发布，除非有按键
+        dirty = false;
+        
         switch (lower_c) {
-            case 'i':
-                twist.linear.x = keyboard_control->linear_speed_;
+            // ========== 前进/后退 ==========
+            case 'i':  // 前进
+                // 左轮正转，右轮反转
+                fl_vel = bl_vel = keyboard_control->wheel_speed_;
+                fr_vel = br_vel = -keyboard_control->wheel_speed_;
                 dirty = true;
+                std::cout << "前进: 速度=" << keyboard_control->wheel_speed_ << " rad/s" << std::endl;
                 break;
-            case ',':  // Backward
-                twist.linear.x = -keyboard_control->linear_speed_;
+                
+            case ',':  // 后退
+                // 左轮反转，右轮正转
+                fl_vel = bl_vel = -keyboard_control->wheel_speed_;
+                fr_vel = br_vel = keyboard_control->wheel_speed_;
                 dirty = true;
+                std::cout << "后退: 速度=" << keyboard_control->wheel_speed_ << " rad/s" << std::endl;
                 break;
-            case 'j':  // Turn left
-                twist.angular.z = keyboard_control->angular_speed_;
+                
+            // ========== 左转/右转 ==========
+            case 'j':  // 左转（原地左转）
+                // 左轮后退，右轮前进
+                fl_vel = bl_vel = -keyboard_control->wheel_speed_;
+                fr_vel = br_vel = -keyboard_control->wheel_speed_;
                 dirty = true;
+                std::cout << "左转" << std::endl;
                 break;
-            case 'l':  // Turn right
-                twist.angular.z = -keyboard_control->angular_speed_;
+                
+            case 'l':  // 右转（原地右转）
+                // 左轮前进，右轮后退
+                fl_vel = bl_vel = keyboard_control->wheel_speed_;
+                fr_vel = br_vel = keyboard_control->wheel_speed_;
                 dirty = true;
+                std::cout << "右转" << std::endl;
                 break;
-            case 'u':  // Forward-left
-                twist.linear.x = keyboard_control->linear_speed_;
-                twist.angular.z = keyboard_control->angular_speed_;
+                
+            // ========== 斜向移动 ==========
+            case 'u':  // 左前移动
+                fl_vel = bl_vel = keyboard_control->wheel_speed_;
+                fr_vel = br_vel = 0.0;
                 dirty = true;
+                std::cout << "左前移动" << std::endl;
                 break;
-            case 'o':  // Forward-right
-                twist.linear.x = keyboard_control->linear_speed_;
-                twist.angular.z = -keyboard_control->angular_speed_;
+                
+            case 'o':  // 右前移动
+                fl_vel = bl_vel = 0.0;
+                fr_vel = br_vel = -keyboard_control->wheel_speed_;
                 dirty = true;
+                std::cout << "右前移动" << std::endl;
                 break;
-            case 'n':  // Backward-left
-                twist.linear.x = -keyboard_control->linear_speed_;
-                twist.angular.z = keyboard_control->angular_speed_;
+                
+            case 'n':  // 左后移动
+                fl_vel = bl_vel = -keyboard_control->wheel_speed_;
+                fr_vel = br_vel = 0.0;
                 dirty = true;
+                std::cout << "左后移动" << std::endl;
                 break;
-            case 'm':  // Backward-right
-                twist.linear.x = -keyboard_control->linear_speed_;
-                twist.angular.z = -keyboard_control->angular_speed_;
+                
+            case 'm':  // 右后移动
+                fl_vel = bl_vel = 0.0;
+                fr_vel = br_vel = keyboard_control->wheel_speed_;
                 dirty = true;
+                std::cout << "右后移动" << std::endl;
                 break;
-            case 'q':  // Quit
-                std::cout << "关闭键盘控制节点..." << std::endl;
+            
+            // ========== 速度调节 ==========
+            case 'w':  // 增加速度
+                keyboard_control->wheel_speed_ += 1.0;
+                keyboard_control->wheel_speed_ = std::min(keyboard_control->wheel_speed_, 30.0);
+                std::cout << "速度增加到: " << keyboard_control->wheel_speed_ << " rad/s" << std::endl;
+                break;
+                
+            case 's':  // 降低速度
+                keyboard_control->wheel_speed_ -= 1.0;
+                keyboard_control->wheel_speed_ = std::max(keyboard_control->wheel_speed_, 1.0);
+                std::cout << "速度降低到: " << keyboard_control->wheel_speed_ << " rad/s" << std::endl;
+                break;
+            
+            // ========== 停止 ==========
+            case '0':  // 停止
+            case ' ':  // 空格键停止
+                fl_vel = fr_vel = bl_vel = br_vel = 0.0;
+                dirty = true;
+                std::cout << "停止" << std::endl;
+                break;
+            
+            // ========== 退出 ==========
+            case 'q':  // 退出
+                std::cout << "\n关闭键盘控制节点..." << std::endl;
+                // 发送停止命令
+                keyboard_control->publishWheelVel(0.0, 0.0, 0.0, 0.0);
                 keyboard_control->cleanup();
                 rclcpp::shutdown();
                 return 0;
+                
             default:
                 break;
         }
         
         if (dirty) {
-            keyboard_control->cmd_pub_->publish(twist);
-            dirty = false;
+            keyboard_control->publishWheelVel(fl_vel, fr_vel, bl_vel, br_vel);
         }
         
         rclcpp::spin_some(keyboard_control);
